@@ -149,18 +149,22 @@ export function parser(value) {
     }
 
     function functionExpression() {
-        let token = reference();
+        let token = range();
         if (token?.type == "literal" && tokens[cursor]?.type == "(") {
             cursor++;
             const args = [expression()];
-            while (tokens[cursor]?.type == ",") {
-                if (!cursor >= tokens.length) throw new Error("PARSING ERROR : unclosed parenthesis");
-                cursor ++
-                args.push(expression());
-                if (tokens[cursor]?.type == ")") {
+            if (tokens[cursor]?.type == ")") {
                     cursor ++;
-                    break;
-                };
+            } else {
+                while (tokens[cursor]?.type == ",") {
+                    if (!cursor >= tokens.length) throw new Error("PARSING ERROR : unclosed parenthesis");
+                    cursor ++
+                    args.push(expression());
+                    if (tokens[cursor]?.type == ")") {
+                        cursor ++;
+                        break;
+                    };
+                }
             }
             return {
                 type: "function",
@@ -169,6 +173,20 @@ export function parser(value) {
                     args,
                 },
             };
+        }
+        return token;
+    }
+
+    function range() {
+        let token = reference();
+        if (token?.type === "reference" && tokens[cursor]?.type === ":") {
+            token = {
+                type: "range",
+                value: {
+                    start: token,
+                    end: reference(),
+                }
+            }
         }
         return token;
     }
