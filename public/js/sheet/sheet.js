@@ -1,5 +1,6 @@
 import { parser } from "../parser/index.js";
 import { context as ctx } from "./context.js";
+import { a12vect, vect2a1 } from "/lib/a1notation.js";
 
 function initLayout(layout) {
     layout.show();
@@ -39,6 +40,7 @@ class Entrie {
     constructor(address, value) {
         this.address = address;
         this._value = value;
+        this._pointerAddresses = []
     }
 
     get value() {
@@ -65,10 +67,13 @@ class Entrie {
             }
 
             subscribeChange(entrie) {
+                if (self._pointerAddresses.includes(entrie.address)) return;
                 $(document).on("cell:change", (event, ent) => {
                     if (ent.address.toLowerCase() !== entrie.address.toLowerCase()) return;
                     $(document).trigger("cell:change", [self]);
                 })
+                console.log("Subscribe " + self.address + " is listening " + entrie.address + " for change.")
+                self._pointerAddresses.push(entrie.address);
             }
 
             parseNumber(n) {
@@ -102,7 +107,7 @@ class Entrie {
                     }
                 }.bind(this)
                 const execFunction = function(statment) {
-                    const args = this.exec(statment.value.args);
+                    let args = this.exec(statment.value.args);
                     const name = statment.value.name.value;
                     if (
                         datasheet &&
@@ -110,6 +115,9 @@ class Entrie {
                         datasheet.context.hasOwnProperty(name) &&
                         typeof datasheet.context[name] === "function"
                     ) {
+                        if (!Array.isArray(args)) {
+                            args = [args];
+                        }
                         return datasheet.context[name].apply(datasheet.context, args);
                     } else {
                         return "UNKNOW Function";
@@ -119,6 +127,25 @@ class Entrie {
                     const entrie = datasheet.getByReference(statment.value.value);
                     this.subscribeChange(entrie);
                     return entrie.query().exec();
+                }.bind(this)
+                const resolveRange = function(statment) {
+                    let entries = datasheet.getByRange(
+                        statment.value.start.value.value,
+                        statment.value.end.value.value,
+                    )
+                    entries
+                    .forEach(this.subscribeChange.bind(this))
+                    entries = entries
+                    .map((item) => {
+                        return item.query().exec();
+                    })
+                    entries = entries
+                    .filter(item => {
+                        if (Array.isArray(item) && item.length == 0) return false;
+                        return item;
+                    });
+
+                    return entries;
                 }.bind(this)
         
                 switch (statment.type.toLowerCase()) {
@@ -136,6 +163,8 @@ class Entrie {
                         return Number.parseFloat(statment.value)
                     case "reference":
                         return resolveReference(statment)
+                    case "range":
+                        return resolveRange(statment)
                     default:
                         return statment?.value || this.literal
                 }
@@ -192,6 +221,19 @@ export function rederer(layout) {
                 this.data.push(entrie);
             }
             return entrie;
+        },
+        getByRange(start, end) {
+            start = a12vect(start);
+            end = a12vect(end);
+            const rangeAddrs = [];
+            for (let x = start[0]; x <= end[0]; x++ ) {
+                for (let y = start[1]; y <= end[1]; y++ ) {
+                    rangeAddrs.push(vect2a1([x, y]))
+                }
+            }
+            return rangeAddrs.map((item) => {
+                return this.getByReference(item);
+            })
         }
     };
 
@@ -203,8 +245,10 @@ export function rederer(layout) {
     sheet.getByReference("B4").update(5);
     sheet.getByReference("C4").update("=:B4 --");
     sheet.getByReference("B5").update("=:B3 + :B4");
-    sheet.getByReference("C5").update("=sum(:C3, :C4)");
+    // sheet.getByReference("C5").update("=sum(:C3, :C4)");
     sheet.getByReference("D5").update("=:B3 & :B4");
+    sheet.getByReference("D6").update("=sum(:B3:C5)");
+    // sheet.getByReference("D6").update("=log('COUCOU')");
     layout.bindSheet(sheet);
     layout.renderSheet();
 }
