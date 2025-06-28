@@ -7,4 +7,3 @@ function main() {
     rederer(Layout())
 }
 main();
-console.log(a12vect("AA15"))

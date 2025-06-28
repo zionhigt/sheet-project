@@ -72,7 +72,6 @@ class Row {
                 $(document).trigger("onCellClicked", [{
                     $e: cell,
                     onEdit: function(sheet) {
-                        console.log("clicked")
                         const $input = $('<span class="cell-input" type="text">');
                         $input.attr("contenteditable", true)
                         // GET query literal
@@ -89,7 +88,9 @@ class Row {
                         });
                         $input.on("blur", function() {
                             const value = $(this).text();
-                            entrie.update(value);
+                            if (value != entrie.val) {
+                                entrie.update(value);
+                            }
                             cell.text(entrie.value);
                             $(this).remove();
                         });
@@ -211,7 +212,6 @@ class Layout {
             this._header.extends(n, cellWidth);
         }
         for (let row of this._rows) {
-            console.log(row.$e.find(".cell").length)
             row.extends(n, cellWidth);
         }
 
