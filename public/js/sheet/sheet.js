@@ -201,7 +201,7 @@ class Entrie {
 
 
 
-export function rederer(layout) {
+export function renderer(layout) {
     initLayout(layout);
     const sheet = {
         name: "default",
