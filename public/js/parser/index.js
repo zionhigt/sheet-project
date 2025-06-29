@@ -6,6 +6,7 @@ function lexer(value) {
         let token = value[cursor++];
 
         switch (token) {
+            // HANDLE double sign
             case '+':
             case '-':
             case "&":
@@ -125,7 +126,7 @@ export function parser(value) {
     function linearExpression() {
         let left = factorExpression();
         let incressSigns = ["++", "--"];
-        while (["++", "+", "--", "-", "&", "||"].includes(tokens[cursor]?.type)) {
+        while (["++", "+", "--", "-", "&", "||", "=="].includes(tokens[cursor]?.type)) {
             left = {
                 type: "binary",
                 left: left,
