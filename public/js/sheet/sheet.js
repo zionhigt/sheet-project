@@ -118,7 +118,11 @@ class Entrie {
                         if (!Array.isArray(args)) {
                             args = [args];
                         }
-                        return datasheet.context[name].apply(datasheet.context, args);
+                        const runtimeEnvironement = {
+                            ...datasheet.context,
+                            currentStatment: statment
+                        }
+                        return datasheet.context[name].apply(runtimeEnvironement, args, statment);
                     } else {
                         return "UNKNOW Function";
                     }
@@ -136,15 +140,11 @@ class Entrie {
                     entries
                     .forEach(this.subscribeChange.bind(this))
                     entries = entries
-                    .map((item) => {
-                        return item.query().exec();
-                    })
-                    entries = entries
-                    .filter(item => {
+                    .map(item => item.query().exec())
+                    .filter((item) => {
                         if (Array.isArray(item) && item.length == 0) return false;
                         return item;
-                    });
-
+                    })
                     return entries;
                 }.bind(this)
         
@@ -240,6 +240,8 @@ export function rederer(layout) {
     const context = ctx(sheet);
     sheet.context = context;
     window.datasheet = sheet;
+
+    // TEST DATA
     sheet.getByReference("B3").update(2);
     sheet.getByReference("C3").update("=:B3 ++");
     sheet.getByReference("B4").update(5);
@@ -249,6 +251,15 @@ export function rederer(layout) {
     sheet.getByReference("D5").update("=:B3 & :B4");
     sheet.getByReference("D6").update("=sum(:B3:C5)");
     // sheet.getByReference("D6").update("=log('COUCOU')");
+
+    sheet.getByReference("B11").update("TOTO");
+    sheet.getByReference("C11").update("26");
+    sheet.getByReference("B12").update("TITI");
+    sheet.getByReference("C12").update("14");
+    sheet.getByReference("B13").update("TATA");
+    sheet.getByReference("C13").update("8");
+    sheet.getByReference("D13").update("=vlookup('TOTO', :B11:C13, 2)");
+
     layout.bindSheet(sheet);
     layout.renderSheet();
 }
