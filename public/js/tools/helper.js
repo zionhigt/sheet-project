@@ -8,3 +8,12 @@ export function getUID(length=16) {
 
     return res;
 }
+
+export function parseNumber(n) {
+    n = n.toString();
+    if (n.includes(".")) {
+        return Number.parseFloat(n);
+    } else {
+        return Number.parseInt(n);
+    }
+}

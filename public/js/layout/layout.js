@@ -91,7 +91,7 @@ class Row {
                             if (value != entrie.val) {
                                 entrie.update(value);
                             }
-                            cell.text(entrie.value);
+                            cell.html(entrie.value);
                             $(this).remove();
                         });
                         cell.append($input);
@@ -287,12 +287,18 @@ class Layout {
             $cell = this.getCellByAddress(entrie.address);
         }
         if ($cell) {
-            $cell.text(entrie.display());
+            $cell.html(entrie.display());
         }
     }
     renderSheet() {
         console.log("REQUESTED : RENDER SHEET")
-        this.sheet.data.forEach(this.renderCell.bind(this))
+        for (let item of this.sheet.data) {
+            try {
+                this.renderCell(item);
+            } catch (err) {
+                continue;
+            }
+        }
     }
 
     bindSheet(sheet) {

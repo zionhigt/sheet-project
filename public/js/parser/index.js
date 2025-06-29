@@ -8,6 +8,9 @@ function lexer(value) {
         switch (token) {
             case '+':
             case '-':
+            case "&":
+            case "|":
+            case "=":
                 if (value[cursor] == token) {
                     tokens.push({
                         type: token + token,
@@ -15,9 +18,7 @@ function lexer(value) {
                     cursor++;
                     break;
                 }
-            case "=":
             case ":":
-            case "&":
             case ')':
             case '(':
             case ',':
@@ -124,7 +125,7 @@ export function parser(value) {
     function linearExpression() {
         let left = factorExpression();
         let incressSigns = ["++", "--"];
-        while (["++", "+", "--", "-", "&"].includes(tokens[cursor]?.type)) {
+        while (["++", "+", "--", "-", "&", "||"].includes(tokens[cursor]?.type)) {
             left = {
                 type: "binary",
                 left: left,
@@ -137,7 +138,7 @@ export function parser(value) {
 
     function factorExpression() {
         let left = functionExpression();
-        while (["*", "/"].includes(tokens[cursor]?.type)) {
+        while (["*", "/", "&&"].includes(tokens[cursor]?.type)) {
             left = {
                 type: "binary",
                 left: left,

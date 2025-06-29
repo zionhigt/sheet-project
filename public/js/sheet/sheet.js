@@ -1,6 +1,7 @@
 import { parser } from "../parser/index.js";
 import { context as ctx } from "./context.js";
 import { a12vect, vect2a1 } from "/lib/a1notation.js";
+import { parseNumber } from "../tools/helper.js";
 
 function initLayout(layout) {
     layout.show();
@@ -54,7 +55,12 @@ class Entrie {
     display() {
         if (this._value === false) return ""
         const query = this.query(this._value);
-        return query.exec();
+        const res = query.exec();
+        if (query.onError) {
+            console.log(query.error)
+            return $("<span>").text("#ERROR").attr("title", query.error.message)
+        }
+        return res;
     }
 
     query(value=this._value) {
@@ -64,6 +70,12 @@ class Entrie {
                 this.literal = literal;
                 this.ast = parser(literal);
                 this.onError = false;
+                this.error = null;
+            }
+
+            onFail(err) {
+                this.onError = true;
+                this.error = err;
             }
 
             subscribeChange(entrie) {
@@ -76,16 +88,8 @@ class Entrie {
                 self._pointerAddresses.push(entrie.address);
             }
 
-            parseNumber(n) {
-                n = n.toString();
-                if (n.includes(".")) {
-                    return Number.parseFloat(n);
-                } else {
-                    return Number.parseInt(n);
-                }
-            }
             execStatement(statment) {
-                const parseNumber = this.parseNumber;
+                // const parseNumber = this.parseNumber;
                 // const execStatement = function(statment) {
                     
                 // }.bind(this)
@@ -104,6 +108,10 @@ class Entrie {
                             return parseNumber(this.exec(statment.left)) / parseNumber(this.exec(statment.right));
                         case "&":
                             return this.exec(statment.left).toString() + this.exec(statment.right).toString();
+                        case "&&":
+                            return this.exec(statment.left) && this.exec(statment.right);
+                        case "||":
+                            return this.exec(statment.left) || this.exec(statment.right);
                     }
                 }.bind(this)
                 const execFunction = function(statment) {
@@ -149,26 +157,30 @@ class Entrie {
                     
                     return result;
                 }.bind(this)
-        
-                switch (statment.type.toLowerCase()) {
-                    case "statment":
-                        if (statment?.value) return this.exec(statment.value)
-                    case "binary":
-                        return execBinary(statment)
-                    case "function":
-                        return execFunction(statment)
-                    case "integer":
-                        return Number.parseInt(statment.value)
-                    case "string":
-                        return statment.value
-                    case "float":
-                        return Number.parseFloat(statment.value)
-                    case "reference":
-                        return resolveReference(statment)
-                    case "range":
-                        return resolveRange(statment)
-                    default:
-                        return statment?.value || this.literal
+                
+                try {
+                    switch (statment.type.toLowerCase()) {
+                        case "statment":
+                            if (statment?.value) return this.exec(statment.value)
+                        case "binary":
+                            return execBinary(statment)
+                        case "function":
+                            return execFunction(statment)
+                        case "integer":
+                            return Number.parseInt(statment.value)
+                        case "string":
+                            return statment.value
+                        case "float":
+                            return Number.parseFloat(statment.value)
+                        case "reference":
+                            return resolveReference(statment)
+                        case "range":
+                            return resolveRange(statment)
+                        default:
+                            return statment?.value || this.literal
+                    }
+                } catch(err) {
+                    return this.onFail(err);
                 }
             }
 
@@ -249,18 +261,25 @@ export function renderer(layout) {
     sheet.getByReference("B4").update(5);
     sheet.getByReference("C4").update("=:B4 --");
     sheet.getByReference("B5").update("=:B3 + :B4");
-    // sheet.getByReference("C5").update("=sum(:C3, :C4)");
     sheet.getByReference("D5").update("=:B3 & :B4");
     sheet.getByReference("D6").update("=sum(:B3:C5)");
-    // sheet.getByReference("D6").update("=log('COUCOU')");
 
+    // TEST vlookup
     sheet.getByReference("B11").update("TOTO");
     sheet.getByReference("C11").update("26");
     sheet.getByReference("B12").update("TITI");
     sheet.getByReference("C12").update("14");
     sheet.getByReference("B13").update("TATA");
     sheet.getByReference("C13").update("8");
-    sheet.getByReference("D13").update("=vlookup('TOTO', :B11:C13, 2)");
+    sheet.getByReference("D13").update("=vlookup('TUTU', :B11:C14, 2)");
+
+    // TEST conditional
+    sheet.getByReference("B14").update(0);
+    sheet.getByReference("C14").update(1);
+    sheet.getByReference("B15").update("=if(:B14, 'YES', 'NO')");
+    sheet.getByReference("C15").update("=if(:C14, 'YES', 'NO')");
+    sheet.getByReference("B16").update("=if(:B14 || :C14, 'YES', 'NO')");
+    sheet.getByReference("C16").update("=if(:B14 && :C14, 'YES', 'NO')");
 
     layout.bindSheet(sheet);
     layout.renderSheet();
