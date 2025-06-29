@@ -127,25 +127,27 @@ class Entrie {
                         return "UNKNOW Function";
                     }
                 }.bind(this)
+
                 const resolveReference = function(statment) {
                     const entrie = datasheet.getByReference(statment.value.value);
                     this.subscribeChange(entrie);
                     return entrie.query().exec();
                 }.bind(this)
+
                 const resolveRange = function(statment) {
                     let entries = datasheet.getByRange(
                         statment.value.start.value.value,
                         statment.value.end.value.value,
                     )
-                    entries
-                    .forEach(this.subscribeChange.bind(this))
-                    entries = entries
-                    .map(item => item.query().exec())
-                    .filter((item) => {
-                        if (Array.isArray(item) && item.length == 0) return false;
-                        return item;
-                    })
-                    return entries;
+                    const result = [];
+                    for (let item of entries) {
+                        if (item || (Array.isArray(item) && item.length > 0)) {
+                            result.push(item.query().exec());
+                            this.subscribeChange.bind(this)
+                        }
+                    }
+                    
+                    return result;
                 }.bind(this)
         
                 switch (statment.type.toLowerCase()) {
