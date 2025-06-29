@@ -114,6 +114,14 @@ class Entrie {
                             return this.exec(statment.left) || this.exec(statment.right);
                         case "==":
                             return this.exec(statment.left) == this.exec(statment.right);
+                        case ">":
+                            return this.exec(statment.left) > this.exec(statment.right);
+                        case "<":
+                            return this.exec(statment.left) < this.exec(statment.right);
+                        case "<=":
+                            return this.exec(statment.left) <= this.exec(statment.right);
+                        case ">=":
+                            return this.exec(statment.left) >= this.exec(statment.right);
                     }
                 }.bind(this)
                 const execFunction = function(statment) {
