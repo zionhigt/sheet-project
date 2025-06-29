@@ -126,7 +126,7 @@ class Entrie {
                 }.bind(this)
                 const execFunction = function(statment) {
                     let args = this.exec(statment.value.args);
-                    const name = statment.value.name.value;
+                    const name = statment.value.name.value.toLowerCase();
                     if (
                         datasheet &&
                         datasheet.context &&
@@ -142,7 +142,7 @@ class Entrie {
                         }
                         return datasheet.context[name].apply(runtimeEnvironement, args, statment);
                     } else {
-                        return "UNKNOW Function";
+                        throw new Error("Function : " + name + " is undefined");
                     }
                 }.bind(this)
 
