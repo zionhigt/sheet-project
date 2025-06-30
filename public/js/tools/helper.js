@@ -10,7 +10,7 @@ export function getUID(length=16) {
 }
 
 export function parseNumber(n) {
-    n = n.toString();
+    n = (n || "").toString();
     if (n.includes(".")) {
         return Number.parseFloat(n);
     } else {
