@@ -281,7 +281,7 @@ export function renderer(layout) {
     sheet.getByReference("C12").update("14");
     sheet.getByReference("B13").update("TATA");
     sheet.getByReference("C13").update("8");
-    sheet.getByReference("D13").update("=vlookup('TUTU', :B11:C14, 2)");
+    sheet.getByReference("D13").update("=vlookup('TOTO', :B11:C14, 2)");
 
     // TEST conditional
     sheet.getByReference("B14").update(0);
