@@ -109,7 +109,7 @@ class Row {
             const $cel = this.cell(cellWidth);
             const rowAddress = this.$e.data("address")
             if (rowAddress) {
-                $cel.data("address", vect2a1([Number.parseInt(rowAddress), col + 1]))
+                $cel.data("address", vect2a1([Number.parseInt(rowAddress), col]))
             }
             if (data && Array.isArray(data) && data.length > col) {
                 $cel.text(data[col]);
@@ -126,7 +126,7 @@ class CellHeader extends Row {
     show (length, cellWidth) {
         const data = [];
         for (let col = 0; col < length; col++) {
-            const notation = vect2a1([0, col + 1]);
+            const notation = vect2a1([0, col]);
             const [a, n] = parseNotation(notation);
             data.push(a);
         }
@@ -238,7 +238,7 @@ class Layout {
 
     getCellByAddress(addr) {
         const [i, j] = a12vect(addr);
-        return this._rows[i - 1].cells[j - 1];
+        return this._rows[i - 1].cells[j];
     }
 
     extends(n) {
@@ -285,11 +285,13 @@ class Layout {
         let $cell = null;
         if (entrie.address) {
             $cell = this.getCellByAddress(entrie.address);
+
         }
         if ($cell) {
             $cell.html(entrie.display());
         }
     }
+
     renderSheet() {
         console.log("REQUESTED : RENDER SHEET")
         for (let item of this.sheet.data) {

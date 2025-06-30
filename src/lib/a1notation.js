@@ -2,21 +2,14 @@
 
 const base = 26;
 function dec2alpha(n) {
-    let chars = []
-    let q = n;
-    while(q > 0) {
-        chars.push((q - 1) % base);
-        q = Math.floor(q / base);
+    n++;
+    let chars = '';
+    while (n > 0) {
+        n --;
+        chars += String.fromCharCode((n % base) + "A".charCodeAt());
+        n = Math.floor(n / base);
     }
-    chars = chars.reverse();
-    if (chars.length === 0) chars.push(0);
-    return chars;
-}
-
-function charAlpha(n) {
-    return String.fromCharCode(
-        "A".charCodeAt() + n
-    )
+    return chars.split("").reverse().join("");
 }
 
 function nAlpha(a) {
@@ -26,7 +19,7 @@ function nAlpha(a) {
 export function vect2a1(vect) {
     if (vect.length != 2) throw new Error("Vector must have two axes [row, col]")
     const [i, j] = vect;
-    return `${dec2alpha(j).map(charAlpha).join("")}${i}`;
+    return `${dec2alpha(j)}${i}`;
 
 }
 
@@ -65,5 +58,5 @@ export function alpha2dec(a) {
     const r = sign.reduce(function(acc, item, i) {
         return acc += (((item + 1) % base) * Math.pow(base, i));
     }, 0)
-    return r;
+    return r - 1;
 }
