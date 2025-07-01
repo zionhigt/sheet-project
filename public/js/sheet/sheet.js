@@ -63,6 +63,24 @@ class Entrie {
         return res;
     }
 
+    /**
+     * 
+     * @param {*} target 
+     * @returns boolean
+     * 
+     * Laisser moi te conter une histoire !
+     */
+    depends(target) {
+        // Imagine un monde où tout le monde échange un seul bien : le Truc.
+        // A peut acheter un Truc à B uniquement si B (et ses clients, récursivement)
+        // n’ont pas besoin d’acheter un Truc à A. Sinon, la boucle est bouclée :
+        // chacun attend que l’autre lui fournisse ce qu’il attend déjà. Dépendance circulaire.
+
+        return this._pointerAddresses.some(
+            item => target === item || item.depends(target)
+        );
+    }
+
     query(value=this._value) {
         const self = this;
         class Query {
@@ -79,13 +97,14 @@ class Entrie {
             }
 
             subscribeChange(entrie) {
-                if (self._pointerAddresses.includes(entrie.address)) return;
+                if (entrie.depends(self)) throw new Error("Circular dependencies " + entrie.address)
+                if (self._pointerAddresses.includes(entrie)) return;
                 $(document).on("cell:change", (event, ent) => {
                     if (ent.address.toLowerCase() !== entrie.address.toLowerCase()) return;
                     $(document).trigger("cell:change", [self]);
                 })
                 console.log("Subscribe " + self.address + " is listening " + entrie.address + " for change.")
-                self._pointerAddresses.push(entrie.address);
+                self._pointerAddresses.push(entrie);
             }
 
             execStatement(statment) {
@@ -149,7 +168,13 @@ class Entrie {
                 const resolveReference = function(statment) {
                     const entrie = datasheet.getByReference(statment.value.value);
                     this.subscribeChange(entrie);
-                    return entrie.query().exec();
+                    const query = entrie.query();
+                    const result = query.exec();
+                    if (query.onError) {
+                        query.error.message = "Error at :" + entrie.address + " |> " + query.error.message
+                        throw query.error;
+                    }
+                    return result;
                 }.bind(this)
 
                 const resolveRange = function(statment) {
@@ -200,10 +225,14 @@ class Entrie {
                 (ast || []).forEach((item) => {
                     result.push(this.execStatement(item));
                 })
-                if (result.length == 1) {
-                    return result[0];
+                switch (result.length) {
+                    case 0:
+                        return "";
+                    case 1:
+                        return result[0];
+                    default:
+                        return result;
                 }
-                return result;
             }
         }
 
@@ -241,7 +270,8 @@ export function renderer(layout) {
         getByReference(address) {
             let entrie = this.data.find((item) => (item.address || "").toLowerCase() == (address || "").toLowerCase());
             if (!entrie) {
-                entrie = this.makeEntrie(address, "");
+                const $cell = layout.getCellByAddress(address)
+                entrie = this.makeEntrie(address, $cell.text());
                 this.data.push(entrie);
             }
             return entrie;
@@ -265,31 +295,36 @@ export function renderer(layout) {
     sheet.context = context;
     window.datasheet = sheet;
 
-    // TEST DATA
-    sheet.getByReference("B3").update(2);
-    sheet.getByReference("C3").update("=:B3 ++");
-    sheet.getByReference("B4").update(5);
-    sheet.getByReference("C4").update("=:B4 --");
-    sheet.getByReference("B5").update("=:B3 + :B4");
-    sheet.getByReference("D5").update("=:B3 & :B4");
-    sheet.getByReference("D6").update("=sum(:B3:C5)");
+    // // TEST DATA
+    // sheet.getByReference("B3").update(2);
+    // sheet.getByReference("C3").update("=:B3 ++");
+    // sheet.getByReference("B4").update(5);
+    // sheet.getByReference("C4").update("=:B4 --");
+    // sheet.getByReference("B5").update("=:B3 + :B4");
+    // sheet.getByReference("D5").update("=:B3 & :B4");
+    // sheet.getByReference("D6").update("=sum(:B3:C5)");
 
-    // TEST vlookup
-    sheet.getByReference("B11").update("TOTO");
-    sheet.getByReference("C11").update("26");
-    sheet.getByReference("B12").update("TITI");
-    sheet.getByReference("C12").update("14");
-    sheet.getByReference("B13").update("TATA");
-    sheet.getByReference("C13").update("8");
-    sheet.getByReference("D13").update("=vlookup('TOTO', :B11:C14, 2)");
+    // // TEST vlookup
+    // sheet.getByReference("B11").update("TOTO");
+    // sheet.getByReference("C11").update("26");
+    // sheet.getByReference("B12").update("TITI");
+    // sheet.getByReference("C12").update("14");
+    // sheet.getByReference("B13").update("TATA");
+    // sheet.getByReference("C13").update("8");
+    // sheet.getByReference("D13").update("=vlookup('TOTO', :B11:C14, 2)");
 
-    // TEST conditional
-    sheet.getByReference("B14").update(0);
-    sheet.getByReference("C14").update(1);
-    sheet.getByReference("B15").update("=if(:B14, 'YES', 'NO')");
-    sheet.getByReference("C15").update("=if(:C14, 'YES', 'NO')");
-    sheet.getByReference("B16").update("=if(:B14 || :C14, 'YES', 'NO')");
-    sheet.getByReference("C16").update("=if(:B14 && :C14, 'YES', 'NO')");
+    // // TEST conditional
+    // sheet.getByReference("B14").update(0);
+    // sheet.getByReference("C14").update(1);
+    // sheet.getByReference("B15").update("=if(:B14, 'YES', 'NO')");
+    // sheet.getByReference("C15").update("=if(:C14, 'YES', 'NO')");
+    // sheet.getByReference("B16").update("=if(:B14 || :C14, 'YES', 'NO')");
+    // sheet.getByReference("C16").update("=if(:B14 && :C14, 'YES', 'NO')");
+
+    // TEST recursion
+    sheet.getByReference("F7").update("=:F8 + 1");
+    sheet.getByReference("F8").update("=:G7 * 2");
+    sheet.getByReference("G7").update("=:F7");
 
     layout.bindSheet(sheet);
     layout.renderSheet();
