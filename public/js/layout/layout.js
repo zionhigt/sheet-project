@@ -9,19 +9,14 @@ class Cell {
 }
 
 class Row {
-    constructor(is_index=false) {
+    constructor(master, is_index=false) {
+        this.master = master;
         this.context = {
             editable: true,
         };
         this._$e = null;
         this._length = 0;
-        if (!is_index) {
-            this.index = $('<div class="cell index">');
-
-        } else {
-            this.index = false;
-        }
-
+        this.index = $('<div class="cell index">');
         this._cells = [];
     }
 
@@ -59,6 +54,7 @@ class Row {
                 $cel.text(data[col]);
             }
             this.$e.append($cel);
+            this.master.onCellCreated($cel);
         }
         this._length += n;
         return this;
@@ -105,19 +101,8 @@ class Row {
 
     show(length, cellWidth, data) {
         this.$e.empty();
-        for (let col = 0; col < length; col++) {
-            const $cel = this.cell(cellWidth);
-            const rowAddress = this.$e.data("address")
-            if (rowAddress) {
-                $cel.data("address", vect2a1([Number.parseInt(rowAddress), col]))
-            }
-            if (data && Array.isArray(data) && data.length > col) {
-                $cel.text(data[col]);
-            }
-            this.$e.append($cel);
-        }
+        this.extends(length, cellWidth, data);
         this.$e.prepend(this.index);
-        this._length = length;
         return this;
     }
 }
@@ -192,7 +177,7 @@ class Layout {
 
     row(index, length, cellWidth) {
         const $row = $('<div class="row">');
-        const row = new Row();
+        const row = new Row(this);
         row.attach($row);
         row.$e.data("address", index);
         row
@@ -223,8 +208,8 @@ class Layout {
         const $cells = this.lastRow.find(".cell:not(.index)");
         const $firstCell = $($cells[0]);
         const length = this._rows.length;
-        let i = 1;
-        while (i <= n) {
+        let i = 0;
+        while (i < n) {
             const row = this.row(
                     length + (i++),
                     $cells.length,
@@ -233,12 +218,17 @@ class Layout {
             $list.append(row.$e);
             this._rows.push(row);
         }
-
     }
 
     getCellByAddress(addr) {
         const [i, j] = a12vect(addr);
-        return this._rows[i - 1].cells[j];
+        const row =  this._rows.find(function(item) {
+            return item.$e.data("address") == i
+        })
+        const cell = row?._cells.find(function(item) {
+            return item.data("address") == addr;
+        })
+        return cell
     }
 
     extends(n) {
@@ -270,8 +260,6 @@ class Layout {
             $list.append(row.$e);
             length += row.$e.outerHeight();
         }
-        this.extends(5);
-        this.addRows(5);
 
     }
 
@@ -280,15 +268,20 @@ class Layout {
             this.extends(n);
         }
     }
-    
-    renderCell(entrie) {
-        let $cell = null;
-        if (entrie.address) {
-            $cell = this.getCellByAddress(entrie.address);
 
+    onCellCreated($cell) {
+        const address = $cell.data("address");
+        const entrie = this.sheet?.get(address);
+        if (entrie) this.renderCell(entrie, $cell);
+    }
+    
+    renderCell(entrie, $cell) {
+        if (!$cell && entrie.address) {
+            $cell = this.getCellByAddress(entrie.address);
         }
         if ($cell) {
-            $cell.html(entrie.display());
+            const value = entrie.display();
+            $cell.html(value);
         }
     }
 
