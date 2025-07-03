@@ -140,7 +140,8 @@ export function parser(value) {
                 type: "binary",
                 left: left,
                 operator: tokens[cursor ++],
-                right: incressSigns.includes(tokens[cursor - 1]?.type) ? {type: "INTEGER", value:1} : factorExpression(),
+                // Obligé d'appeler factor expression apprés avoir manger l'operateur
+                right: incressSigns.includes(tokens[cursor - 1]?.type) ? { type: "INTEGER", value: 1 } : factorExpression(),
             }
         }
         return left;
@@ -160,8 +161,8 @@ export function parser(value) {
     }
 
     function functionExpression() {
-        let token = range();
-        if (token?.type == "literal" && tokens[cursor]?.type == "(") {
+        let name = range();
+        if (name?.type == "literal" && tokens[cursor]?.type == "(") {
             cursor++;
             const args = [expression()];
             if (tokens[cursor]?.type == ")") {
@@ -179,13 +180,10 @@ export function parser(value) {
             }
             return {
                 type: "function",
-                value: {
-                    name: token,
-                    args,
-                },
+                value: { name, args },
             };
         }
-        return token;
+        return name;
     }
 
     function range() {
@@ -228,9 +226,5 @@ export function parser(value) {
         }
         return token;
     }
-
-}
-
-export function exec(node, context) {
 
 }

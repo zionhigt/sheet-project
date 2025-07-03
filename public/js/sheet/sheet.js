@@ -3,6 +3,9 @@ import { context as ctx } from "./context.js";
 import { a12vect, vect2a1 } from "/lib/a1notation.js";
 import { parseNumber } from "../tools/helper.js";
 
+
+const floatPrecision = 2;
+
 function initLayout(layout) {
     layout.show();
     const $mainBody = $("main.body");
@@ -121,7 +124,7 @@ class Entrie {
                         case "*":
                             return parseNumber(this.exec(statment.left)) * parseNumber(this.exec(statment.right));
                         case "/":
-                            return parseNumber(this.exec(statment.left)) / parseNumber(this.exec(statment.right));
+                            return (parseNumber(this.exec(statment.left)) / parseNumber(this.exec(statment.right))).toFixed(floatPrecision);
                         case "&":
                             return this.exec(statment.left).toString() + this.exec(statment.right).toString();
                         case "&&":
@@ -203,7 +206,7 @@ class Entrie {
                         case "string":
                             return statment.value
                         case "float":
-                            return Number.parseFloat(statment.value)
+                            return Number.parseFloat(statment.value).toFixed(floatPrecision);
                         case "reference":
                             return resolveReference(statment)
                         case "range":
@@ -324,9 +327,9 @@ export function renderer(layout) {
     // TEST recursion
     sheet.getByReference("F7").update("=:F8 + 1");
     sheet.getByReference("F8").update("=:G7 * 2");
-    sheet.getByReference("G7").update("=:F7");
+    sheet.getByReference("G7").update("=:E7");
 
-    sheet.getByReference("E7").update("=:A50");
+    sheet.getByReference("E7").update("=:A50 / 3");
     sheet.getByReference("A50").update("50");
 
     // let $cell = layout.getCellByAddress(address);
