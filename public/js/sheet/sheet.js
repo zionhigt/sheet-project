@@ -41,7 +41,7 @@ class Entrie {
     constructor(address, value) {
         this.address = address;
         this._value = value;
-        this._pointerAddresses = []
+        this._pointerAddresses = [];
     }
 
     get value() {
@@ -108,10 +108,7 @@ class Entrie {
             }
 
             execStatement(statment) {
-                // const parseNumber = this.parseNumber;
-                // const execStatement = function(statment) {
-                    
-                // }.bind(this)
+
                 if (statment instanceof Query) return statment.exec();
                 const execBinary = function(statment) {
                     switch (statment.operator.type) {
@@ -267,11 +264,14 @@ export function renderer(layout) {
             }
             layout.renderCell(entrie);
         },
+        get(address) {
+            return this.data.find((item) => (item.address || "").toLowerCase() == (address || "").toLowerCase())
+        },
         getByReference(address) {
-            let entrie = this.data.find((item) => (item.address || "").toLowerCase() == (address || "").toLowerCase());
+            let entrie = this.get(address);
             if (!entrie) {
                 const $cell = layout.getCellByAddress(address)
-                entrie = this.makeEntrie(address, $cell.text());
+                entrie = this.makeEntrie(address, $cell?.text() || "");
                 this.data.push(entrie);
             }
             return entrie;
@@ -326,7 +326,22 @@ export function renderer(layout) {
     sheet.getByReference("F8").update("=:G7 * 2");
     sheet.getByReference("G7").update("=:F7");
 
+    sheet.getByReference("E7").update("=:A50");
+    sheet.getByReference("A50").update("50");
+
+    // let $cell = layout.getCellByAddress(address);
+    // while ($cell && $cell.length > 0 && $cell.text()) {
+    //     console.log(address);
+    //     address = a12vect(address);
+    //     address = [address[1], address[0] + 1];
+    //     address = vect2a1(address);
+    //     sheet.getByReference(address).update(address);
+    // }
+    // console.log("BREAK on " + address)
+
     layout.bindSheet(sheet);
+    const $cell = layout.getCellByAddress("AA7")
+    console.log($cell || "DEBUG YES")
     layout.renderSheet();
 }
 

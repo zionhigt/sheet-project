@@ -43,10 +43,12 @@ export function parseNotation(notation) {
 
 export function a12vect(notation) {
     const [a, n] = parseNotation(notation);
-    return [
+    const a1 =  [
         Number.parseInt(n),
         alpha2dec(a)
     ]
+    if (a1.some(item => Number.isNaN(item))) throw new Error("Invalide address " + notation);
+    return a1;
 }
 
 export function alpha2dec(a) {
@@ -56,7 +58,7 @@ export function alpha2dec(a) {
     }
 
     const r = sign.reduce(function(acc, item, i) {
-        return acc += (((item + 1) % base) * Math.pow(base, i));
+        return acc += ((item % base) * Math.pow(base, i));
     }, 0)
-    return r - 1;
+    return r;
 }
