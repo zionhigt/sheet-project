@@ -1,7 +1,7 @@
 /** alpha refrence the math base 26 */
 
 const base = 26;
-function dec2alpha(n) {
+export function dec2alpha(n) {
     n++;
     let chars = '';
     while (n > 0) {
