@@ -27,6 +27,17 @@
         box-sizing: border-box;
     }
 
+    body.overed:before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, .25);
+        z-index: 1800;
+    }
+
     main.body {
         width: 100%;
         height: 90vh;
@@ -56,6 +67,7 @@
         top: 0;
         left: 0;
         position: sticky;
+        z-index: 1500;
     }
     header.dashboard-handler ul {
         margin: 0;
@@ -207,6 +219,52 @@
         white-space: nowrap;
         display: block;
     }
+
+    .dashboard-handler ul li {
+        display: inline-block;
+        position: relative;
+    }
+
+    .menu {
+        position: absolute;
+        bottom: -3rem;
+        left: 0;
+        width: 100px;
+        height: auto;
+        min-height: 50px;
+        background-color: #fff;
+        border: 1px solid var(--bg-utils);
+        opacity: 0;
+        transition: opacity 0s 0s;
+        z-index: 20000;
+    }
+
+    .menu.show {
+        opacity: 1;
+    }
+
+    .modal {
+        background-color: #fff;
+        padding: 2rem 50px;
+        height: max-content;
+        box-sizing: border-box;
+        border-radius: 10px;
+        display: none;
+        flex-flow: column nowrap;
+        justify-content: space-between;
+    }
+
+    .modal.show {
+        display: flex;
+    }
+    .modal .modal-header {
+        border-bottom: 1px solid var(--bg-utils);
+    }
+    .modal .modal-body {
+        flex: 1;
+        padding: 2rem 0; 
+        border-bottom: 1px solid var(--bg-utils);
+    }
     /* span.cell-input:focus {
         outline: 2px solid rgb(41, 105, 223);
     } */
@@ -216,7 +274,10 @@
 <body>
     <header class="dashboard-handler">
         <ul>
-            <li><a href="#">Fichier</a></li>
+            <li>
+                <a id="file" href="#file-box">Fichier</a>
+                <div id="file-box" class="menu"></div>
+            </li>
             <li><a href="#">Insertion</a></li>
             <li><a href="#">Format</a></li>
             <li><a href="#">Aide</a></li>

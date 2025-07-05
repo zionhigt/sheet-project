@@ -67,7 +67,7 @@ class Row {
             // })
             $cel.on(eventName, function(event, width) {
                 width = width.toString() + "px";
-                $(this).css({"width": width, "min-width": width, "max-width": width});
+                $cel.css({"width": width, "min-width": width, "max-width": width});
             })
             this.$e.append($cel);
             this.master.onCellCreated($cel);
@@ -201,7 +201,8 @@ class CellHeader extends Row {
 }
 
 class Layout {
-    constructor() {
+    constructor(storage) {
+        this.storage = storage;
         this._parentNode = null;
         this.uid = null;
         this._header = new CellHeader();
@@ -363,18 +364,49 @@ class Layout {
 
     bindSheet(sheet) {
         this.sheet = sheet;
+        const self = this;
         $(document).on("onCellClicked", function(event, cell) {
             cell.onEdit(sheet);
+        })
+        const $file = $("#file");
+        $file.on("click", function(event) {
+            const $drop = $($file.attr("href"));
+            $drop.empty();
+            const modal = $("<div>").modal("Choisir un fichier", function() {
+                const $fileLink = self.storage.openFileLink(function(data) {
+                    if (self.sheet.data.length > 0) {
+                        const _do = confirm("En chargant ce fichier vous allez perdre vos données non sauvgardés. Continuer ?");
+                        if (!_do) return;
+                    }
+                    self.sheet.loadData(data.name, data.data);
+                    self.renderSheet();
+                    modal.pop("hidden");
+                    $drop.removeClass("show");
+                })
+                $(this).find(".modal-body").append($fileLink);
+            });
+            $drop.append([
+                self.storage.downloadLink("sheet", self.sheet),
+                $("<a>")
+                .on('click', function(event) {
+                    event.preventDefault();
+                    modal.pop();
+                })
+                .text("Ouvrir")
+            ])
+            event.preventDefault();
+            $drop.toggleClass("show");
+            // self.storage.download("sheet", this.sheet)
         })
     }
 }
 
-export function layout(uid) {
+export function layout(storage, uid) {
     if (uid) {
         if (layout._cache.hasOwProperty(uid)) return layout._cache[uid];
         console.warn("Layout UID (uid) is unknown. A new layout will be generated.")
     }
-    const l = new Layout();
+    const l = new Layout(storage);
     l.attach($("#container"));
     l.setUid(getUID());
     layout._cache[l.uid] = l;

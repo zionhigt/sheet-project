@@ -248,6 +248,12 @@ class Entrie {
         this.emitChange();
         return this;
     }
+
+    toJSON() {
+        const obj = {...this};
+        delete obj._pointerAddresses;
+        return obj;
+    }
 }
 
 
@@ -257,6 +263,16 @@ export function renderer(layout) {
     const sheet = {
         name: "default",
         data: [],
+        loadData(name, data) {
+            if (name) this.name = name;
+            if (data && Array.isArray(data)) {
+                this.data = [];
+                for (let entrie of data) {
+                    this.getByReference(entrie.address).update(entrie._value);
+                }
+            }
+            return self;
+        },
         makeEntrie(address, value) {
             return new Entrie(address, value);
         },
@@ -291,6 +307,12 @@ export function renderer(layout) {
             return rangeAddrs.map((item) => {
                 return this.getByReference(item);
             })
+        },
+
+        toJSON() {
+            const obj = {...this};
+            delete obj.context;
+            return obj;
         }
     };
 
@@ -298,39 +320,39 @@ export function renderer(layout) {
     sheet.context = context;
     window.datasheet = sheet;
 
-    // TEST DATA
-    sheet.getByReference("B3").update(2);
-    sheet.getByReference("C3").update("=:B3 ++");
-    sheet.getByReference("B4").update(5);
-    sheet.getByReference("C4").update("=:B4 --");
-    sheet.getByReference("B5").update("=:B3 + :B4");
-    sheet.getByReference("D5").update("=:B3 & :B4");
-    sheet.getByReference("D6").update("=sum(:B3:C5)");
+    // // TEST DATA
+    // sheet.getByReference("B3").update(2);
+    // sheet.getByReference("C3").update("=:B3 ++");
+    // sheet.getByReference("B4").update(5);
+    // sheet.getByReference("C4").update("=:B4 --");
+    // sheet.getByReference("B5").update("=:B3 + :B4");
+    // sheet.getByReference("D5").update("=:B3 & :B4");
+    // sheet.getByReference("D6").update("=sum(:B3:C5)");
 
-    // TEST vlookup
-    sheet.getByReference("B11").update("TOTO");
-    sheet.getByReference("C11").update("26");
-    sheet.getByReference("B12").update("TITI");
-    sheet.getByReference("C12").update("14");
-    sheet.getByReference("B13").update("TATA");
-    sheet.getByReference("C13").update("8");
-    sheet.getByReference("D13").update("=vlookup('TOTO', :B11:C14, 2)");
+    // // TEST vlookup
+    // sheet.getByReference("B11").update("TOTO");
+    // sheet.getByReference("C11").update("26");
+    // sheet.getByReference("B12").update("TITI");
+    // sheet.getByReference("C12").update("14");
+    // sheet.getByReference("B13").update("TATA");
+    // sheet.getByReference("C13").update("8");
+    // sheet.getByReference("D13").update("=vlookup('TOTO', :B11:C14, 2)");
 
-    // TEST conditional
-    sheet.getByReference("B14").update(0);
-    sheet.getByReference("C14").update(1);
-    sheet.getByReference("B15").update("=if(:B14, 'YES', 'NO')");
-    sheet.getByReference("C15").update("=if(:C14, 'YES', 'NO')");
-    sheet.getByReference("B16").update("=if(:B14 || :C14, 'YES', 'NO')");
-    sheet.getByReference("C16").update("=if(:B14 && :C14, 'YES', 'NO')");
+    // // TEST conditional
+    // sheet.getByReference("B14").update(0);
+    // sheet.getByReference("C14").update(1);
+    // sheet.getByReference("B15").update("=if(:B14, 'YES', 'NO')");
+    // sheet.getByReference("C15").update("=if(:C14, 'YES', 'NO')");
+    // sheet.getByReference("B16").update("=if(:B14 || :C14, 'YES', 'NO')");
+    // sheet.getByReference("C16").update("=if(:B14 && :C14, 'YES', 'NO')");
 
-    // TEST recursion
-    sheet.getByReference("F7").update("=:F8 + 1");
-    sheet.getByReference("F8").update("=:G7 * 2");
-    sheet.getByReference("G7").update("=:E7");
+    // // TEST recursion
+    // sheet.getByReference("F7").update("=:F8 + 1");
+    // sheet.getByReference("F8").update("=:G7 * 2");
+    // sheet.getByReference("G7").update("=:E7");
 
-    sheet.getByReference("E7").update("=:A50 / 3");
-    sheet.getByReference("A50").update("50");
+    // sheet.getByReference("E7").update("=:A50 / 3");
+    // sheet.getByReference("A50").update("50");
 
     layout.bindSheet(sheet);
     layout.renderSheet();
