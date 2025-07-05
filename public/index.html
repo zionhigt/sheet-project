@@ -77,7 +77,10 @@
     }
     header.dashboard-handler ul li {
         list-style-type: none;
+        display: block;
+        position: relative;
     }
+
     header.dashboard-handler ul li a {
         text-decoration: none;
         color: #121212;
@@ -220,23 +223,22 @@
         display: block;
     }
 
-    .dashboard-handler ul li {
-        display: inline-block;
-        position: relative;
-    }
-
     .menu {
         position: absolute;
-        bottom: -3rem;
+        top: 1rem;
         left: 0;
         width: 100px;
         height: auto;
         min-height: 50px;
+        padding: 1rem;
         background-color: #fff;
         border: 1px solid var(--bg-utils);
         opacity: 0;
         transition: opacity 0s 0s;
         z-index: 20000;
+    }
+    .menu a {
+        display: block;
     }
 
     .menu.show {

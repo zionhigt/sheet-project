@@ -387,7 +387,8 @@ class Layout {
             });
             $drop.append([
                 self.storage.downloadLink("sheet", self.sheet),
-                $("<a>")
+                $("<hr>"),
+                $("<a>", {href: "#!"})
                 .on('click', function(event) {
                     event.preventDefault();
                     modal.pop();
@@ -396,7 +397,6 @@ class Layout {
             ])
             event.preventDefault();
             $drop.toggleClass("show");
-            // self.storage.download("sheet", this.sheet)
         })
     }
 }
