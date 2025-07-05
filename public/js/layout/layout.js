@@ -1,5 +1,5 @@
 import { getUID } from "../tools/helper.js";
-import { a12vect, vect2a1, parseNotation } from "/lib/a1notation.js"
+import { a12vect, vect2a1, parseNotation, dec2alpha } from "/lib/a1notation.js"
 
 class Cell {
     static getCell(width) {
@@ -16,7 +16,12 @@ class Row {
         };
         this._$e = null;
         this._length = 0;
-        this.index = $('<div class="cell index">');
+        this.index = $('<div class="cell index">').on(
+            "click",
+            event => {
+                this.$e.toggleClass("selected")
+            }
+        );
         this._cells = [];
     }
 
@@ -43,16 +48,27 @@ class Row {
         this._$e = $e;
     }
 
-    extends(n, cellWidth, data) {
+    extends(n, header, data) {
         for (let col = 0; col < n; col++) {
-            const $cel = this.cell(cellWidth)
             const rowAddress = this.$e.data("address")
+            const a = dec2alpha(this._length + col);
+            const $headerCell = header.find('.cell[data-address="'+ a +'"]');
+            const $cel = this.cell($headerCell.outerWidth());
+            if ($headerCell.attr("data-selected") == 1) $cel.addClass("selected");
             if (rowAddress) {
-                $cel.data("address", vect2a1([Number.parseInt(rowAddress), this._length + col]))
+                $cel.attr("data-address", vect2a1([Number.parseInt(rowAddress), this._length + col]));
             }
             if (data && Array.isArray(data) && data.length > col) {
                 $cel.text(data[col]);
             }
+            const eventName = "header:" + a + ":change:width";
+            // $(document).on(eventName, function(event, width) {
+            //     $cel.trigger(eventName, [width]);
+            // })
+            $cel.on(eventName, function(event, width) {
+                width = width.toString() + "px";
+                $(this).css({"width": width, "min-width": width, "max-width": width});
+            })
             this.$e.append($cel);
             this.master.onCellCreated($cel);
         }
@@ -65,6 +81,7 @@ class Row {
         this.cells.push(cell);
         if (this.context.editable) {
             cell.on("click", function(event) {
+                if ($(this).hasClass("index")) return;
                 $(document).trigger("onCellClicked", [{
                     $e: cell,
                     onEdit: function(sheet) {
@@ -99,9 +116,9 @@ class Row {
         return cell;
     }
 
-    show(length, cellWidth, data) {
+    show(length, header, data) {
         this.$e.empty();
-        this.extends(length, cellWidth, data);
+        this.extends(length, header, data);
         this.$e.prepend(this.index);
         return this;
     }
@@ -113,19 +130,70 @@ class CellHeader extends Row {
         for (let col = 0; col < length; col++) {
             const notation = vect2a1([0, col]);
             const [a, n] = parseNotation(notation);
-            data.push(a);
+            data.push({
+                "text": a,
+                "data-address": a,
+                "data-selected": 0,
+            });
         }
-        super.show(length, cellWidth, data);
+        super.show(length, {outerWidth: cellWidth}, data);
         this?.index.addClass("layout-corner");
     }
 
-    extends(n, cellWidth) {
+    getColumns(A) {
+        const result = [];
+        $(".cell").each(function(i, item) {
+            const $item = $(item);
+            if ($item.parent(".col-name").length > 0 || $item.hasClass("index") || $item.length == 0) return;
+            const [a, n] = parseNotation($item.attr("data-address"));
+            if (a == A) {
+                result.push($item);
+            }
+        })
+        return result;
+    }
+
+    extends(n, cellWidth, data) {
         for (let col = 0; col < n; col++) {
             const $cel = this.cell(cellWidth)
             const notation = vect2a1([0, this._length + col]);
             const [a, n] = parseNotation(notation);
-            $cel.text(a);
+            let text = a;
+            let attr = {"data-address": a, "data-selected": 0};
+            if (data && data?.length && data.length > col) {
+                text = data[col];
+                if (typeof text != "string") {
+                    if (text?.text) {
+                        attr = {...text}
+                        delete attr.text;
+                        text = text.text;
+                    }
+                }
+            }
+            $cel.text(text);
+            $cel.attr(attr);
             this.$e.append($cel);
+            $cel.columnResizer({start: $cel.outerWidth()}, ({ dx }) => { })
+            $cel.on("click", event => {
+                const $columns = this.getColumns(a);
+                let selected = $cel.attr("data-selected") || 0;
+                selected = Number.parseInt(selected);
+                $cel.attr("data-selected", Math.abs(selected - 1).toString());
+                if (!selected) {
+                    $columns.map(function(item) {
+                        return item.addClass("selected");
+                    })
+                } else {
+                    $columns.map(function(item) {
+                        return item.removeClass("selected");
+                    })
+                }
+            });
+            $cel.on("resize", function(event) {
+                const address = $(this).attr("data-address");
+                $('.cell[data-address^="' + address + '"]')
+                .trigger("header:"+ address +":change:width", [$(this).outerWidth()]);
+            })
         }
         this._length += n;
         return this;
@@ -136,7 +204,7 @@ class Layout {
     constructor() {
         this._parentNode = null;
         this.uid = null;
-        this._header = null;
+        this._header = new CellHeader();
         this._rows = [];
         this.sheet = null;
         $(document).on("cell:change", (event, entrie) => {
@@ -175,29 +243,15 @@ class Layout {
         return Cell.getCell(width);
     }
 
-    row(index, length, cellWidth) {
-        const $row = $('<div class="row">');
-        const row = new Row(this);
-        row.attach($row);
-        row.$e.data("address", index);
-        row
-        .withContext({
-            editable: true,
-        })
-        .show(length, cellWidth);
-        row.index.text(index);
-        return row;
-    }
-
     addCol(n=1) {
         const $cells = this.lastRow.find(".cell:not(.index)");
         const $firstCell = $($cells[0]);
         const cellWidth = $firstCell.outerWidth();
         if (this._header) {
-            this._header.extends(n, cellWidth);
+            this._header.extends(n, 50);
         }
         for (let row of this._rows) {
-            row.extends(n, cellWidth);
+            row.extends(n, this.header);
         }
 
     }
@@ -213,11 +267,25 @@ class Layout {
             const row = this.row(
                     length + (i++),
                     $cells.length,
-                    $firstCell.outerWidth(),
+                    this.header,
                 );
             $list.append(row.$e);
             this._rows.push(row);
         }
+    }
+
+    row(index, length, cellWidth) {
+        const $row = $('<div class="row">');
+        const row = new Row(this);
+        row.attach($row);
+        row.$e.data("address", index);
+        row
+        .withContext({
+            editable: true,
+        })
+        .show(length, cellWidth);
+        row.index.text(index);
+        return row;
     }
 
     getCellByAddress(addr) {
@@ -242,20 +310,17 @@ class Layout {
 
         const cellWidth = 100;
         const nbCol = Math.floor(innerWidth / cellWidth) + 5;
-        const cellHeader = new CellHeader();
-        this._header = cellHeader;
         const $a1Header = $("main.body").find(".col-name");
-        cellHeader.attach($a1Header);
-        cellHeader
+        this._header.attach($a1Header);
+        this._header
         .withContext({
             editable: false,
         })
         .show(nbCol, cellWidth);
-
         let length = 0;
         let i = 1;
         while (length < $this.parents("main.body").outerHeight()) {
-            const row = this.row(i++, nbCol, cellWidth);
+            const row = this.row(i++, nbCol, this.header);
             this._rows.push(row);
             $list.append(row.$e);
             length += row.$e.outerHeight();

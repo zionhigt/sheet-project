@@ -298,31 +298,31 @@ export function renderer(layout) {
     sheet.context = context;
     window.datasheet = sheet;
 
-    // // TEST DATA
-    // sheet.getByReference("B3").update(2);
-    // sheet.getByReference("C3").update("=:B3 ++");
-    // sheet.getByReference("B4").update(5);
-    // sheet.getByReference("C4").update("=:B4 --");
-    // sheet.getByReference("B5").update("=:B3 + :B4");
-    // sheet.getByReference("D5").update("=:B3 & :B4");
-    // sheet.getByReference("D6").update("=sum(:B3:C5)");
+    // TEST DATA
+    sheet.getByReference("B3").update(2);
+    sheet.getByReference("C3").update("=:B3 ++");
+    sheet.getByReference("B4").update(5);
+    sheet.getByReference("C4").update("=:B4 --");
+    sheet.getByReference("B5").update("=:B3 + :B4");
+    sheet.getByReference("D5").update("=:B3 & :B4");
+    sheet.getByReference("D6").update("=sum(:B3:C5)");
 
-    // // TEST vlookup
-    // sheet.getByReference("B11").update("TOTO");
-    // sheet.getByReference("C11").update("26");
-    // sheet.getByReference("B12").update("TITI");
-    // sheet.getByReference("C12").update("14");
-    // sheet.getByReference("B13").update("TATA");
-    // sheet.getByReference("C13").update("8");
-    // sheet.getByReference("D13").update("=vlookup('TOTO', :B11:C14, 2)");
+    // TEST vlookup
+    sheet.getByReference("B11").update("TOTO");
+    sheet.getByReference("C11").update("26");
+    sheet.getByReference("B12").update("TITI");
+    sheet.getByReference("C12").update("14");
+    sheet.getByReference("B13").update("TATA");
+    sheet.getByReference("C13").update("8");
+    sheet.getByReference("D13").update("=vlookup('TOTO', :B11:C14, 2)");
 
-    // // TEST conditional
-    // sheet.getByReference("B14").update(0);
-    // sheet.getByReference("C14").update(1);
-    // sheet.getByReference("B15").update("=if(:B14, 'YES', 'NO')");
-    // sheet.getByReference("C15").update("=if(:C14, 'YES', 'NO')");
-    // sheet.getByReference("B16").update("=if(:B14 || :C14, 'YES', 'NO')");
-    // sheet.getByReference("C16").update("=if(:B14 && :C14, 'YES', 'NO')");
+    // TEST conditional
+    sheet.getByReference("B14").update(0);
+    sheet.getByReference("C14").update(1);
+    sheet.getByReference("B15").update("=if(:B14, 'YES', 'NO')");
+    sheet.getByReference("C15").update("=if(:C14, 'YES', 'NO')");
+    sheet.getByReference("B16").update("=if(:B14 || :C14, 'YES', 'NO')");
+    sheet.getByReference("C16").update("=if(:B14 && :C14, 'YES', 'NO')");
 
     // TEST recursion
     sheet.getByReference("F7").update("=:F8 + 1");
@@ -332,19 +332,7 @@ export function renderer(layout) {
     sheet.getByReference("E7").update("=:A50 / 3");
     sheet.getByReference("A50").update("50");
 
-    // let $cell = layout.getCellByAddress(address);
-    // while ($cell && $cell.length > 0 && $cell.text()) {
-    //     console.log(address);
-    //     address = a12vect(address);
-    //     address = [address[1], address[0] + 1];
-    //     address = vect2a1(address);
-    //     sheet.getByReference(address).update(address);
-    // }
-    // console.log("BREAK on " + address)
-
     layout.bindSheet(sheet);
-    const $cell = layout.getCellByAddress("AA7")
-    console.log($cell || "DEBUG YES")
     layout.renderSheet();
 }
 
