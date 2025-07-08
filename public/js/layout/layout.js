@@ -179,6 +179,7 @@ class CellHeader extends Row {
                 let selected = $cel.attr("data-selected") || 0;
                 selected = Number.parseInt(selected);
                 $cel.attr("data-selected", Math.abs(selected - 1).toString());
+                const $columns = this.getColumns(a);
                 if (!selected) {
                     $columns.map(function(item) {
                         return item.addClass("selected");

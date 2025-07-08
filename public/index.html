@@ -128,7 +128,7 @@
 
 
     div.cell:hover {
-        border: 2px solid rgb(74, 213, 255);
+        border: 1px solid rgb(74, 213, 255);
     }
     
     .col-name div.cell {
@@ -153,6 +153,7 @@
     
     .row {
         /* display: table-row; */
+        box-sizing: border-box;
         display: flex;
         flex-flow: row nowrap;
         position: relative;
@@ -215,10 +216,11 @@
     span.cell-input {
         position: relative;
         width: 100%;
-        height: 100%;
+        height: 99%;
         border: none;
         outline: none;
-        box-sizing: border-box;
+        /* box-sizing: border-box; */
+        pointer-events: none;
         white-space: nowrap;
         display: block;
     }
@@ -236,13 +238,15 @@
         opacity: 0;
         transition: opacity 0s 0s;
         z-index: 20000;
+        pointer-events: none;
     }
     .menu a {
         display: block;
     }
-
+    
     .menu.show {
         opacity: 1;
+        pointer-events: auto;
     }
 
     .modal {
@@ -267,6 +271,14 @@
         padding: 2rem 0; 
         border-bottom: 1px solid var(--bg-utils);
     }
+
+    #input {
+        display: none;
+        margin-top: 1rem;
+    }
+    #input.show {
+        display: block;
+    }
     /* span.cell-input:focus {
         outline: 2px solid rgb(41, 105, 223);
     } */
@@ -284,6 +296,8 @@
             <li><a href="#">Format</a></li>
             <li><a href="#">Aide</a></li>
         </ul>
+        <div id="input">
+        </div>
     </header>
     <main class="body">
         <!-- <aside class="indexes"></aside> -->
