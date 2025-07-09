@@ -213,16 +213,21 @@
         border-color: var(--border-dark);
     }
 
-    span.cell-input {
+    input.cell-input {
         position: relative;
-        width: 100%;
+        width: auto;
         height: 99%;
         border: none;
         outline: none;
-        /* box-sizing: border-box; */
+        box-shadow: none;
+        box-sizing: border-box;
         pointer-events: none;
         white-space: nowrap;
         display: block;
+        z-index: 500;
+    }
+    input.cell-input:focus {
+        border: 1px solid rgb(74, 213, 255);
     }
 
     .menu {
@@ -296,7 +301,8 @@
             <li><a href="#">Format</a></li>
             <li><a href="#">Aide</a></li>
         </ul>
-        <div id="input">
+        <div id="input" class="show">
+            <input id="masterInput" name="master-input" class="master-input" type="text">
         </div>
     </header>
     <main class="body">
