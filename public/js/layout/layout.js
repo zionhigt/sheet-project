@@ -85,22 +85,13 @@ class Row {
                 $(document).trigger("onCellClicked", [{
                     $e: cell,
                     onEdit: function(sheet) {
-                        const $input = $('<span class="cell-input" type="text">');
+                        const $input = $('<input class="cell-input" type="text">');
                         $input.attr("contenteditable", true)
                         // GET query literal
                         let entrie = sheet.getByReference(cell.data("address"));
-                        $input.text(entrie.val);
-                        cell.empty();
-                        $input.on("keydown", function(event) {
-                            if (event.key === 'Enter' || event.keyCode === 13) {
-                                $(this).trigger("blur");
-                            }
-                        })
-                        $input.on("click", function(event) {
-                            event.stopPropagation();
-                        });
+                        $input.val(entrie.val);
                         $input.on("blur", function() {
-                            const value = $(this).text();
+                            const value = $(this).val();
                             if (value != entrie.val) {
                                 entrie.update(value);
                             }
