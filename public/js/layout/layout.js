@@ -88,7 +88,11 @@ class Row {
                         const $input = $('<input class="cell-input" type="text">');
                         $input.attr("contenteditable", true)
                         // GET query literal
+                        cell.empty();
                         let entrie = sheet.getByReference(cell.data("address"));
+                        $input.on("click", function(event) {
+                            event.stopPropagation();
+                        })
                         $input.val(entrie.val);
                         $input.on("blur", function() {
                             const value = $(this).val();

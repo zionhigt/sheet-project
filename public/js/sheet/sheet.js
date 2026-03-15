@@ -6,7 +6,7 @@ import { parseNumber } from "../tools/helper.js";
 
 const floatPrecision = 2;
 
-function initLayout(layout) {
+export function initLayout(layout) {
     layout.show();
     const $mainBody = $("main.body");
     const $cell = layout.lastRow.find(".cell:first-child");
@@ -39,227 +39,226 @@ function initLayout(layout) {
         lastScroll = [left, top];
     })
 }
-
-class Entrie {
-    constructor(address, value) {
-        this.address = address;
-        this._value = value;
-        this._pointerAddresses = [];
-    }
-
-    get value() {
-        return this.display();
-    }
-
-    get val() {
-        return this._value;
-    }
-
-    display() {
-        if (this._value === false) return ""
-        const query = this.query(this._value);
-        const res = query.exec();
-        if (query.onError) {
-            console.log(query.error)
-            return $("<span>").text("#ERROR").attr("title", query.error.message)
+export function Entrie(datasheet, address, value) {
+    class Entrie {
+        constructor(address, value) {
+            this.address = address;
+            this._value = value;
+            this._pointerAddresses = [];
         }
-        return res;
-    }
 
-    /**
-     * 
-     * @param {*} target 
-     * @returns boolean
-     * 
-     * Laisser moi te conter une histoire !
-     */
-    depends(target) {
-        // Imagine un monde où tout le monde échange un seul bien : le Truc.
-        // A peut acheter un Truc à B uniquement si B (et ses clients, récursivement)
-        // n’ont pas besoin d’acheter un Truc à A. Sinon, la boucle est bouclée :
-        // chacun attend que l’autre lui fournisse ce qu’il attend déjà. Dépendance circulaire.
+        get value() {
+            return this.display();
+        }
 
-        return this._pointerAddresses.some(
-            item => target === item || item.depends(target)
-        );
-    }
+        get val() {
+            return this._value;
+        }
 
-    query(value=this._value) {
-        const self = this;
-        class Query {
-            constructor(literal) {
-                this.literal = literal;
-                this.ast = parser(literal);
-                this.onError = false;
-                this.error = null;
+        display() {
+            if (this._value === false) return ""
+            const query = this.query(this._value);
+            const res = query.exec();
+            if (query.onError) {
+                console.log(query.error)
+                return $("<span>").text("#ERROR").attr("title", query.error.message)
             }
+            return res;
+        }
 
-            onFail(err) {
-                this.onError = true;
-                this.error = err;
-            }
+        /**
+         * 
+         * @param {*} target 
+         * @returns boolean
+         * 
+         * Laisser moi te conter une histoire !
+         */
+        depends(target) {
+            // Imagine un monde où tout le monde échange un seul bien : le Truc.
+            // A peut acheter un Truc à B uniquement si B (et ses clients, récursivement)
+            // n’ont pas besoin d’acheter un Truc à A. Sinon, la boucle est bouclée :
+            // chacun attend que l’autre lui fournisse ce qu’il attend déjà. Dépendance circulaire.
 
-            subscribeChange(entrie) {
-                if (entrie.depends(self)) throw new Error("Circular dependencies " + entrie.address)
-                if (self._pointerAddresses.includes(entrie)) return;
-                $(document).on("cell:change", (event, ent) => {
-                    if (ent.address.toLowerCase() !== entrie.address.toLowerCase()) return;
-                    $(document).trigger("cell:change", [self]);
-                })
-                console.log("Subscribe " + self.address + " is listening " + entrie.address + " for change.")
-                self._pointerAddresses.push(entrie);
-            }
+            return this._pointerAddresses.some(
+                item => target === item || item.depends(target)
+            );
+        }
 
-            execStatement(statment) {
-
-                if (statment instanceof Query) return statment.exec();
-                const execBinary = function(statment) {
-                    switch (statment.operator.type) {
-                        case "+":
-                        case "++":
-                            return parseNumber(this.exec(statment.left)) + parseNumber(this.exec(statment.right));
-                        case "-":
-                        case "--":
-                            return parseNumber(this.exec(statment.left)) - parseNumber(this.exec(statment.right));
-                        case "*":
-                            return parseNumber(this.exec(statment.left)) * parseNumber(this.exec(statment.right));
-                        case "/":
-                            return (parseNumber(this.exec(statment.left)) / parseNumber(this.exec(statment.right))).toFixed(floatPrecision);
-                        case "&":
-                            return this.exec(statment.left).toString() + this.exec(statment.right).toString();
-                        case "&&":
-                            return this.exec(statment.left) && this.exec(statment.right);
-                        case "||":
-                            return this.exec(statment.left) || this.exec(statment.right);
-                        case "==":
-                            return this.exec(statment.left) == this.exec(statment.right);
-                        case ">":
-                            return this.exec(statment.left) > this.exec(statment.right);
-                        case "<":
-                            return this.exec(statment.left) < this.exec(statment.right);
-                        case "<=":
-                            return this.exec(statment.left) <= this.exec(statment.right);
-                        case ">=":
-                            return this.exec(statment.left) >= this.exec(statment.right);
-                    }
-                }.bind(this)
-                const execFunction = function(statment) {
-                    let args = this.exec(statment.value.args);
-                    const name = statment.value.name.value.toLowerCase();
-                    if (
-                        datasheet &&
-                        datasheet.context &&
-                        datasheet.context.hasOwnProperty(name) &&
-                        typeof datasheet.context[name] === "function"
-                    ) {
-                        if (!Array.isArray(args)) {
-                            args = [args];
-                        }
-                        const runtimeEnvironement = {
-                            ...datasheet.context,
-                            currentStatment: statment
-                        }
-                        return datasheet.context[name].apply(runtimeEnvironement, args, statment);
-                    } else {
-                        throw new Error("Function : " + name + " is undefined");
-                    }
-                }.bind(this)
-
-                const resolveReference = function(statment) {
-                    const entrie = datasheet.getByReference(statment.value.value);
-                    this.subscribeChange(entrie);
-                    const query = entrie.query();
-                    const result = query.exec();
-                    if (query.onError) {
-                        query.error.message = "Error at :" + entrie.address + " |> " + query.error.message
-                        throw query.error;
-                    }
-                    return result;
-                }.bind(this)
-
-                const resolveRange = function(statment) {
-                    let entries = datasheet.getByRange(
-                        statment.value.start.value.value,
-                        statment.value.end.value.value,
-                    )
-                    const result = [];
-                    for (let item of entries) {
-                        if (item || (Array.isArray(item) && item.length > 0)) {
-                            result.push(item.query().exec());
-                            this.subscribeChange.bind(this)
-                        }
-                    }
-                    
-                    return result;
-                }.bind(this)
-                
-                try {
-                    switch (statment.type.toLowerCase()) {
-                        case "statment":
-                            if (statment?.value) return this.exec(statment.value)
-                        case "binary":
-                            return execBinary(statment)
-                        case "function":
-                            return execFunction(statment)
-                        case "integer":
-                            return Number.parseInt(statment.value)
-                        case "string":
-                            return statment.value
-                        case "float":
-                            return Number.parseFloat(statment.value).toFixed(floatPrecision);
-                        case "reference":
-                            return resolveReference(statment)
-                        case "range":
-                            return resolveRange(statment)
-                        default:
-                            return statment?.value || this.literal
-                    }
-                } catch(err) {
-                    return this.onFail(err);
+        query(value=this._value) {
+            const self = this;
+            class Query {
+                constructor(literal) {
+                    this.literal = literal;
+                    this.ast = parser(literal);
+                    this.onError = false;
+                    this.error = null;
                 }
-            }
 
-            exec(ast=this.ast) {
-                if (ast && !Array.isArray(ast)) return this.execStatement(ast);
-                const result = [];
-                (ast || []).forEach((item) => {
-                    result.push(this.execStatement(item));
-                })
-                switch (result.length) {
-                    case 0:
-                        return "";
-                    case 1:
-                        return result[0];
-                    default:
+                onFail(err) {
+                    this.onError = true;
+                    this.error = err;
+                }
+
+                subscribeChange(entrie) {
+                    if (entrie.depends(self)) throw new Error("Circular dependencies " + entrie.address)
+                    if (self._pointerAddresses.includes(entrie)) return;
+                    $(document).on("cell:change", (event, ent) => {
+                        if (ent.address.toLowerCase() !== entrie.address.toLowerCase()) return;
+                        $(document).trigger("cell:change", [self]);
+                    })
+                    console.log("Subscribe " + self.address + " is listening " + entrie.address + " for change.")
+                    self._pointerAddresses.push(entrie);
+                }
+
+                execStatement(statment) {
+
+                    if (statment instanceof Query) return statment.exec();
+                    const execBinary = function(statment) {
+                        switch (statment.operator.type) {
+                            case "+":
+                            case "++":
+                                return parseNumber(this.exec(statment.left)) + parseNumber(this.exec(statment.right));
+                            case "-":
+                            case "--":
+                                return parseNumber(this.exec(statment.left)) - parseNumber(this.exec(statment.right));
+                            case "*":
+                                return parseNumber(this.exec(statment.left)) * parseNumber(this.exec(statment.right));
+                            case "/":
+                                return (parseNumber(this.exec(statment.left)) / parseNumber(this.exec(statment.right))).toFixed(floatPrecision);
+                            case "&":
+                                return this.exec(statment.left).toString() + this.exec(statment.right).toString();
+                            case "&&":
+                                return this.exec(statment.left) && this.exec(statment.right);
+                            case "||":
+                                return this.exec(statment.left) || this.exec(statment.right);
+                            case "==":
+                                return this.exec(statment.left) == this.exec(statment.right);
+                            case ">":
+                                return this.exec(statment.left) > this.exec(statment.right);
+                            case "<":
+                                return this.exec(statment.left) < this.exec(statment.right);
+                            case "<=":
+                                return this.exec(statment.left) <= this.exec(statment.right);
+                            case ">=":
+                                return this.exec(statment.left) >= this.exec(statment.right);
+                        }
+                    }.bind(this)
+                    const execFunction = function(statment) {
+                        let args = this.exec(statment.value.args);
+                        const name = statment.value.name.value.toLowerCase();
+                        if (
+                            datasheet &&
+                            datasheet.context &&
+                            datasheet.context.hasOwnProperty(name) &&
+                            typeof datasheet.context[name] === "function"
+                        ) {
+                            if (!Array.isArray(args)) {
+                                args = [args];
+                            }
+                            const runtimeEnvironement = {
+                                ...datasheet.context,
+                                currentStatment: statment
+                            }
+                            return datasheet.context[name].apply(runtimeEnvironement, args, statment);
+                        } else {
+                            throw new Error("Function : " + name + " is undefined");
+                        }
+                    }.bind(this)
+
+                    const resolveReference = function(statment) {
+                        const entrie = datasheet.getByReference(statment.value.value);
+                        this.subscribeChange(entrie);
+                        const query = entrie.query();
+                        const result = query.exec();
+                        if (query.onError) {
+                            query.error.message = "Error at :" + entrie.address + " |> " + query.error.message
+                            throw query.error;
+                        }
                         return result;
+                    }.bind(this)
+
+                    const resolveRange = function(statment) {
+                        let entries = datasheet.getByRange(
+                            statment.value.start.value.value,
+                            statment.value.end.value.value,
+                        )
+                        const result = [];
+                        for (let item of entries) {
+                            if (item || (Array.isArray(item) && item.length > 0)) {
+                                result.push(item.query().exec());
+                                this.subscribeChange.bind(this)
+                            }
+                        }
+                        
+                        return result;
+                    }.bind(this)
+                    
+                    try {
+                        switch (statment.type.toLowerCase()) {
+                            case "statment":
+                                if (statment?.value) return this.exec(statment.value)
+                            case "binary":
+                                return execBinary(statment)
+                            case "function":
+                                return execFunction(statment)
+                            case "integer":
+                                return Number.parseInt(statment.value)
+                            case "string":
+                                return statment.value
+                            case "float":
+                                return Number.parseFloat(statment.value).toFixed(floatPrecision);
+                            case "reference":
+                                return resolveReference(statment)
+                            case "range":
+                                return resolveRange(statment)
+                            default:
+                                return statment?.value || this.literal
+                        }
+                    } catch(err) {
+                        return this.onFail(err);
+                    }
+                }
+
+                exec(ast=this.ast) {
+                    if (ast && !Array.isArray(ast)) return this.execStatement(ast);
+                    const result = [];
+                    (ast || []).forEach((item) => {
+                        result.push(this.execStatement(item));
+                    })
+                    switch (result.length) {
+                        case 0:
+                            return "";
+                        case 1:
+                            return result[0];
+                        default:
+                            return result;
+                    }
                 }
             }
+
+            return new Query(value);
         }
 
-        return new Query(value);
-    }
+        emitChange() {
+            $(document).trigger("cell:change", [this]);
+        }
 
-    emitChange() {
-        $(document).trigger("cell:change", [this]);
-    }
+        update(value) {
+            this._value = value;
+            this.emitChange();
+            return this;
+        }
 
-    update(value) {
-        this._value = value;
-        this.emitChange();
-        return this;
+        toJSON() {
+            const obj = {...this};
+            delete obj._pointerAddresses;
+            return obj;
+        }
     }
-
-    toJSON() {
-        const obj = {...this};
-        delete obj._pointerAddresses;
-        return obj;
-    }
+    return new Entrie(address, value);
 }
 
-
-
 export function renderer(layout) {
-    initLayout(layout);
     const sheet = {
         name: "default",
         data: [],
@@ -274,7 +273,7 @@ export function renderer(layout) {
             return self;
         },
         makeEntrie(address, value) {
-            return new Entrie(address, value);
+            return Entrie(this, address, value);
         },
         push(address, value) {
             let entrie = this.getByReference(address);
@@ -318,8 +317,18 @@ export function renderer(layout) {
 
     const context = ctx(sheet);
     sheet.context = context;
-    window.datasheet = sheet;
+    return sheet;
 
+    // layout = {
+    //     renderCell: function(entrie) {},
+    //     getCellByAddress: function() {
+    //         return {
+    //             text: function() {
+                    // return currentvalue
+    //             }
+    //         }
+    //     },
+    // }
     // // TEST DATA
     // sheet.getByReference("B3").update(2);
     // sheet.getByReference("C3").update("=:B3 ++");
@@ -353,9 +362,6 @@ export function renderer(layout) {
 
     // sheet.getByReference("E7").update("=:A50 / 3");
     // sheet.getByReference("A50").update("50");
-
-    layout.bindSheet(sheet);
-    layout.renderSheet();
 }
 
 class Record {

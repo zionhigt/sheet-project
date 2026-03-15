@@ -1,5 +1,5 @@
 import Layout from "./layout/index.js";
-import { renderer } from "./sheet/sheet.js";
+import { renderer, initLayout } from "./sheet/sheet.js";
 
 import { init } from "./components/index.js";
 
@@ -52,6 +52,9 @@ function main() {
         init(jQuery);
     }
     const layout = Layout(FileStorage)
-    renderer(layout)
+    const sheet = renderer(initLayout(layout))
+    window.datasheet = sheet;
+    layout.bindSheet(sheet);
+    layout.renderSheet();
 }
 main();

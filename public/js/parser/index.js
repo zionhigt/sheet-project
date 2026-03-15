@@ -1,4 +1,4 @@
-function lexer(value) {
+export function lexer(value) {
     value = value.toString();
     let cursor = 0;
     const tokens = [];
@@ -29,6 +29,7 @@ function lexer(value) {
                     break;
                 }
             case ":":
+            case " ":
             case ')':
             case '(':
             case ',':
@@ -114,13 +115,14 @@ export function parser(value) {
     return ast;
 
     function statment() {
-        let token = expression();
-        if (token?.type == "=") {
+        // let token = expression();
+        if (tokens[cursor ++]?.type == "=") {
             return {
                 type: "statment",
                 value: expression(),
             };
         } else {
+            cursor = tokens.length;
             return {
                 type: "literal",
                 value: value,
@@ -134,14 +136,23 @@ export function parser(value) {
 
     function linearExpression() {
         let left = factorExpression();
+        if (left?.type === "-") {
+            left = { type: "INTEGER", value: 0 };
+            cursor --;
+        } 
         let incressSigns = ["++", "--"];
         while (["++", "+", "--", "-", "&", "||", "==", ">=", "<=", ">", "<"].includes(tokens[cursor]?.type)) {
+            const operator = factorExpression();
+            let right;
+            if (incressSigns.includes(operator?.type)) {
+                right = { type: "INTEGER", value: 1 };
+            }
             left = {
                 type: "binary",
                 left: left,
-                operator: tokens[cursor ++],
+                operator: operator,
                 // Obligé d'appeler factor expression apprés avoir manger l'operateur
-                right: incressSigns.includes(tokens[cursor - 1]?.type) ? { type: "INTEGER", value: 1 } : factorExpression(),
+                right:  right || expression(),
             }
         }
         return left;
@@ -150,11 +161,12 @@ export function parser(value) {
     function factorExpression() {
         let left = functionExpression();
         while (["*", "/", "&&"].includes(tokens[cursor]?.type)) {
+            const operator = functionExpression();
             left = {
                 type: "binary",
                 left: left,
-                operator: tokens[cursor ++],
-                right: functionExpression(),
+                operator: operator,
+                right: expression(),
             }
         }
         return left;
@@ -213,8 +225,8 @@ export function parser(value) {
 
     function literal() {
         let token = tokens[cursor ++];
-        if (token?.type == " ") {
-            return tokens[cursor ++];
+        if (tokens[cursor]?.type === " ") {
+            cursor ++;
         }
 
         if (token?.type === "(") {
